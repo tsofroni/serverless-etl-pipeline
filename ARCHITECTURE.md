@@ -1,99 +1,216 @@
 # Architecture
 
+Detailed technical design of the Serverless ETL Pipeline — component responsibilities, data flow, key design decisions, and cost model.
+
+---
+
 ## Overview
 
-This pipeline processes structured data files (CSV or JSON) through a sequence of validated transformation steps. The design prioritises simplicity, observability, and cost efficiency — all appropriate for a portfolio workload.
+The pipeline follows a **fan-in, linear execution** pattern: one file arrives, one Step Functions execution is started, and the file travels through a fixed sequence of Lambda functions before being written to the output bucket. There are no parallel branches, no fan-out, and no human approval gates — the design prioritises simplicity, observability, and cost efficiency.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Ingestion                                                          │
+│  S3 Drop Zone ──(ObjectCreated)──► Lambda: etl-trigger             │
+└──────────────────────────────────────┬──────────────────────────────┘
+                                       │ start_execution()
+┌──────────────────────────────────────▼──────────────────────────────┐
+│  Orchestration                                                      │
+│  Step Functions Express Workflow                                     │
+│  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐          │
+│  │ Validate │→ │ Transform │→ │  Enrich  │→ │   Load   │→ Succeed  │
+│  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘          │
+│       │              │              │              │                 │
+│       └──────────────┴──────────────┴──────────────┘                │
+│                              │ (any failure)                        │
+│                     ┌────────▼────────┐                             │
+│                     │  Error Handler  │→ Fail                       │
+│                     └─────────────────┘                             │
+└─────────────────────────────────────────────────────────────────────┘
+                                       │
+┌──────────────────────────────────────▼──────────────────────────────┐
+│  Storage                                                            │
+│  S3 Output Bucket         DynamoDB (etl_jobs)     CloudWatch Logs  │
+│  output/{jobId}/result.json   PK: jobId               /aws/lambda/ │
+│                               SK: status (per event)  /aws/states/ │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Data Flow
+## Components
 
+### Trigger Lambda (`etl-trigger`)
+
+**Responsibility**: Route — not validate content.
+
+Receives the S3 `ObjectCreated` event, extracts the bucket name and object key (URL-decoding it with `unquote_plus`), validates the file extension, generates a unique `jobId`, writes the initial `STARTED` entry to DynamoDB, and starts the Step Functions execution. If the file extension is unsupported, it raises an exception immediately — no DynamoDB entry, no execution.
+
+**Key implementation detail**: The `jobId` format is `{YYYYMMDDTHHMMSS}#{uuid4}`. This makes IDs chronologically sortable without a GSI, and it makes DynamoDB execution names safe for Step Functions (which requires alphanumeric + hyphens — the `#` is replaced with `-` in the execution name).
+
+### Validate Lambda (`etl-validate`)
+
+**Responsibility**: Content integrity — is this file safe to process?
+
+Checks:
+1. File size (max 50 MB via `head_object` ContentLength)
+2. Encoding (tries UTF-8, UTF-8-BOM, Latin-1 in order)
+3. For CSV: header row presence, at least one data row
+4. For JSON: valid JSON, top-level array, non-empty
+
+Raises an exception on any failure — Step Functions catches it and routes to the error handler. Returns `{**event, "recordCount": N}`.
+
+### Transform Lambda (`etl-transform`)
+
+**Responsibility**: Structural normalisation — make the data consistent.
+
+Transformations applied to every record:
+- **Column names**: `strip().lower().replace(" ", "_")` — e.g. `"Transaction ID"` → `"transaction_id"`
+- **Empty strings**: Converted to `None` / JSON `null`
+- **Date strings**: If a string value parses via `datetime.fromisoformat()`, it is re-serialised in ISO 8601 — coerces ambiguous formats to a canonical representation
+- **Numeric strings**: Try `int()` first, then `float()`. Leaves genuine strings untouched.
+- **Deduplication**: Records are fingerprinted as a `frozenset` of `(key, str(value))` pairs. Exact duplicates are removed; near-duplicates (differing only in ID fields) are kept.
+
+Writes transformed data to `processed/{jobId}/transformed.json` in the drop-zone bucket (same bucket — simpler IAM, same data locality). Returns `{**event, "transformedKey": "..."}`.
+
+### Enrich Lambda (`etl-enrich`)
+
+**Responsibility**: Metadata enrichment — make the output self-describing.
+
+Adds three fields to every record:
+- `processed_at`: ISO 8601 timestamp of when enrichment ran
+- `job_id`: Ties each record back to its pipeline execution
+- `record_index`: 0-based position in the dataset (stable ordering reference)
+
+Wraps the output in an envelope:
+```json
+{
+  "records": [...enriched records...],
+  "metadata": {
+    "total_records": 42,
+    "processed_at": "2024-01-15T14:30:28.312Z",
+    "job_id": "20240115T143022#..."
+  }
+}
 ```
-1. User uploads file → s3://drop-zone-bucket/{filename}.csv (or .json)
 
-2. S3 ObjectCreated event fires → invokes etl-trigger Lambda
+This envelope design means the output file is self-contained — a consumer reading `result.json` can determine provenance without querying DynamoDB.
 
-3. etl-trigger:
-   - Validates file extension
-   - Generates jobId = {timestamp}#{uuid}
-   - Writes STARTED record to DynamoDB etl_jobs
-   - Starts Step Functions Express Workflow execution
+### Load Lambda (`etl-load`)
 
-4. Step Functions orchestrates:
-   a. ValidateFile  → etl-validate Lambda
-   b. TransformData → etl-transform Lambda
-   c. EnrichData    → etl-enrich Lambda
-   d. LoadOutput    → etl-load Lambda
-   e. PipelineSuccess (Succeed state)
+**Responsibility**: Output persistence and cleanup.
 
-   On any failure:
-   → ErrorHandler → etl-error-handler Lambda → PipelineFailed (Fail state)
+Reads the enriched file, writes the final output to `output/{jobId}/result.json` in the output bucket, then deletes both temporary files (`transformed.json` and `enriched.json`) from the drop-zone bucket using the S3 `list_objects` + `delete_object` pattern. Updates DynamoDB to `LOADED`. If the delete fails, the pipeline does not fail — the output is already written and the job is marked complete. Temp file cleanup is best-effort.
 
-5. Final output: s3://output-bucket/output/{jobId}/result.json
-```
+### Error Handler Lambda (`etl-error-handler`)
+
+**Responsibility**: Centralised failure recording.
+
+Receives the Step Functions error event `{Error, Cause}` (injected by the Catch block), parses the `Cause` JSON string to extract the human-readable `errorMessage`, writes a `FAILED` item to DynamoDB, and logs the full error details to CloudWatch. This means every failure is visible in two places: DynamoDB (for quick status lookup) and CloudWatch (for full stack trace).
+
+### Shared Utilities (`lambdas/shared/`)
+
+Bundled into every Lambda ZIP (no Lambda Layers). Four modules:
+
+| Module | Provides |
+|--------|----------|
+| `constants.py` | `INPUT_FORMATS`, `SUPPORTED_ENCODINGS`, `JOB_STATUSES`, `MAX_FILE_SIZE_MB` |
+| `dynamodb_client.py` | Lazy singleton boto3 resource; `write_job()`, `update_job_status()` |
+| `s3_client.py` | Lazy singleton boto3 client; `read_object()`, `write_object()`, `get_file_size_mb()`, `list_objects()`, `delete_object()` |
+| `response_helper.py` | `success(data)`, `error(message, details)` — plain dicts, no HTTP headers |
 
 ---
 
-## State Machine Design
+## Data Flow — State by State
 
-**Express Workflow** was chosen over Standard Workflow because:
-- Processing completes in seconds to minutes (well within the 5-minute Express limit)
-- Express Workflows are significantly cheaper for high-frequency, short-duration executions
-- Execution history is available in CloudWatch Logs (not in the console like Standard)
+```
+Step Functions State          State Contents After Step
+─────────────────────         ──────────────────────────
+(initial input from trigger)  { jobId, sourceBucket, sourceKey, inputFormat }
+↓ ValidateFile                { jobId, sourceBucket, sourceKey, inputFormat, recordCount }
+↓ TransformData               { ..., recordCount (updated), transformedKey }
+↓ EnrichData                  { ..., enrichedKey }
+↓ LoadOutput                  { ..., loadResult: { status, data: { jobId, outputBucket, outputKey, recordCount } } }
+↓ PipelineSuccess             (terminal)
+```
 
-Each Task state passes the full event object to the Lambda and merges the response back via `ResultPath`. This avoids re-fetching data already available in the state input.
+Each Task state uses `ResultPath: "$"`, which replaces the entire state with the Lambda's return value. Since every Lambda returns `{**event, ...new_fields}`, fields accumulate across states without needing `Parameters` blocks or explicit field forwarding.
 
 ---
 
 ## DynamoDB Design
 
-**Table: `etl_jobs`**
-- **PK**: `jobId` (String)
-- **SK**: `status` (String)
+**Table**: `etl_jobs` | PK: `jobId` (String) | SK: `status` (String)
 
-Using `status` as the sort key creates one item per status transition — an event-sourcing-style history. Querying by `jobId` alone returns all status milestones for a job, making it easy to reconstruct the full processing timeline.
+Using `status` as the sort key means each status transition creates a **new DynamoDB item**. A single job at `LOADED` state has five items in the table:
 
-Example query: *"Show me all status events for job X"* → `KeyConditionExpression: jobId = :id`
+```
+STARTED      → { jobId, status, sourceKey, inputFormat, startedAt }
+VALIDATED    → { jobId, status, sourceKey, recordCount, updatedAt }
+TRANSFORMED  → { jobId, status, sourceKey, recordCount, updatedAt }
+ENRICHED     → { jobId, status, recordCount, updatedAt }
+LOADED       → { jobId, status, sourceKey, outputKey, recordCount, updatedAt }
+```
+
+This is an **event-sourcing pattern**. You can query `KeyConditionExpression: jobId = :id` to get the full processing timeline, or `Key: {jobId, status: "LOADED"}` to check if a specific job completed. Timing between steps can be derived from the `updatedAt` timestamps.
+
+The trade-off: `update_item` cannot change the sort key, so every status update is a `put_item` call that creates a new item rather than modifying an existing one.
+
+See [docs/dynamodb-schema.md](./docs/dynamodb-schema.md) for the full attribute reference and example items.
+
+---
+
+## Step Functions Design
+
+**Express Workflow** was chosen for three reasons:
+1. **Cost**: ~25× cheaper than Standard for sub-minute executions (see cost model below)
+2. **Throughput**: Express supports up to 100,000 executions/second; Standard is limited to 2,000/second
+3. **Duration**: This pipeline completes in under 30 seconds — well within the 5-minute Express limit
+
+Each Task state uses `ResultPath: "$"` and catches `States.ALL`. Error routing is centralised — adding a new stage requires only inserting a new Task state with the same Catch block pattern.
+
+The `Catch` block writes the error to `$.error`, which makes `$.error.Error` and `$.error.Cause` available to the ErrorHandler state via its `Parameters` block.
+
+See [docs/step-functions-definition.md](./docs/step-functions-definition.md) for per-state input/output schemas.
 
 ---
 
 ## S3 Prefix Strategy
 
-| Prefix | Bucket | Purpose |
-|--------|--------|---------|
-| `{filename}` | drop-zone | Input files uploaded by users |
-| `processed/{jobId}/transformed.json` | drop-zone | Intermediate: post-transform |
-| `processed/{jobId}/enriched.json` | drop-zone | Intermediate: post-enrich |
-| `output/{jobId}/result.json` | output | Final enriched dataset |
+| Prefix | Bucket | Lifecycle |
+|--------|--------|-----------|
+| `{filename}` | drop-zone | Input files — user-managed |
+| `processed/{jobId}/transformed.json` | drop-zone | Temporary — deleted by Load Lambda |
+| `processed/{jobId}/enriched.json` | drop-zone | Temporary — deleted by Load Lambda |
+| `output/{jobId}/result.json` | output | Permanent output |
 
-Intermediate files in `processed/` are deleted by the Load Lambda after the final output is written. Using the same bucket for drop-zone and intermediate files keeps IAM permissions simple — the Lambda role only needs access to two buckets.
-
----
-
-## Lambda Design Decisions
-
-- **No Lambda Layers**: Each function bundles `shared/` in its own ZIP. Simpler to deploy and reason about; appropriate for a portfolio project where the shared code is small.
-- **Singleton boto3 clients**: Global `_resource = None` guard reuses connections across warm invocations — standard AWS Lambda optimisation.
-- **Step Functions error propagation**: Processing Lambdas raise exceptions on failure; Step Functions catches them and routes to the ErrorHandler. This keeps error handling logic out of the individual functions.
-- **Trigger Lambda**: Returns a structured response dict rather than raising (S3 invocations are async — there is no caller to receive the exception in a meaningful way; the error will appear in CloudWatch).
+Using the same bucket for input and temporary files simplifies IAM (one bucket policy, one role permission) and keeps data locality. A separate output bucket cleanly separates user-facing results from processing artefacts.
 
 ---
 
-## Observability
+## Security Model
 
-- Every Lambda logs `start`, `end`, and key intermediate values via `print()` → CloudWatch Logs
-- DynamoDB records each status transition with a timestamp → job timeline queryable at any time
-- Step Functions execution history available in CloudWatch (Express Workflow)
-- Failed jobs have `errorMessage` in DynamoDB for quick diagnosis without opening CloudWatch
+- All config via Lambda environment variables (never hardcoded)
+- Two IAM roles with least-privilege: `etl-lambda-execution-role` and `etl-stepfunctions-execution-role`
+- Both S3 buckets have all public access blocked
+- No external API calls — all traffic stays within AWS
+- No VPC required (no database endpoints, no private network dependencies)
+
+See [SECURITY.md](./SECURITY.md) for full IAM policy JSON and production readiness checklist.
 
 ---
 
-## Limitations and Future Improvements
+## Cost Model
 
-| Limitation | Potential improvement |
-|------------|----------------------|
-| Max 50 MB file size | Stream processing with S3 Select or chunked reads |
-| Single-region | Multi-region replication with S3 Cross-Region Replication |
-| No authentication on drop-zone | S3 pre-signed URLs with expiry |
-| Manual deployment | AWS SAM or CDK for IaC |
-| No retry logic in Step Functions | Add `Retry` blocks with exponential backoff per Task state |
+| Service | Unit price | Usage at 100 files/day | Monthly estimate |
+|---------|-----------|------------------------|-----------------|
+| Lambda | $0.0000166667/GB-s | 600 inv × 30 s × 256 MB | ~$0.08 |
+| Step Functions Express | $0.00001/execution + $0.00001/GB-s | 100 exec × 30 s | ~$0.02 |
+| DynamoDB On-Demand | $1.25/million writes | ~600 writes/day | ~$0.02 |
+| S3 Standard | $0.023/GB + $0.005/1k PUT | ~3 GB + 300 PUT/day | ~$0.12 |
+| CloudWatch Logs | $0.50/GB ingested | ~500 MB/month | ~$0.25 |
+| **Total** | | | **~$0.49/month** |
+
+At 1,000 files/day the cost scales roughly linearly to **~$4.90/month**. There are no fixed monthly costs beyond CloudWatch Logs minimum retention.
+
+If using **Standard Workflow** instead of Express, the Step Functions cost alone would be ~$1.50/month at 100 files/day (6 state transitions × $0.025/1,000) — a 75× increase for the orchestration layer alone.

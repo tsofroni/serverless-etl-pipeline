@@ -1,0 +1,66 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+
+  pre_build:
+    commands:
+      - echo "Starting ETL pipeline Lambda deployment..."
+      - echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"
+
+  build:
+    commands:
+      - |
+        deploy_function() {
+          fn=$1
+          echo "--- Packaging etl-$fn ---"
+          mkdir -p tmp-$fn
+          cp lambdas/$fn/handler.py tmp-$fn/
+          cp -r lambdas/shared tmp-$fn/shared
+          cd tmp-$fn
+          zip -qr /tmp/etl-$fn.zip .
+          cd ..
+          aws lambda update-function-code \
+            --function-name etl-$fn \
+            --zip-file fileb:///tmp/etl-$fn.zip
+          echo "etl-$fn deployed"
+          rm -rf tmp-$fn /tmp/etl-$fn.zip
+        }
+
+      - |
+        # Detect changed files between the last two commits
+        if git rev-parse HEAD~1 > /dev/null 2>&1; then
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+        else
+          # First commit — deploy everything
+          CHANGED=$(git ls-files)
+        fi
+
+        echo "Changed files:"
+        echo "$CHANGED"
+
+        SHARED_CHANGED=false
+        echo "$CHANGED" | grep -q "lambdas/shared/" && SHARED_CHANGED=true
+
+        if [ "$SHARED_CHANGED" = "true" ]; then
+          echo "shared/ changed — redeploying all functions"
+        fi
+
+        for fn in trigger validate transform enrich load error-handler; do
+          if echo "$CHANGED" | grep -q "lambdas/$fn/" || [ "$SHARED_CHANGED" = "true" ]; then
+            deploy_function $fn
+          else
+            echo "No changes in etl-$fn — skipping"
+          fi
+        done
+
+  post_build:
+    commands:
+      - echo "Deployment complete at $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: no
