@@ -1,0 +1,13 @@
+Transaction ID,Date,Amount,Category,Description,Merchant,Currency
+TXN001,2024-01-05,49.99,Food,Grocery shopping,Supermarket AG,EUR
+TXN002,2024-01-07,12.50,Transport,Bus ticket,City Transit,EUR
+TXN003,2024-01-10,299.00,Electronics,USB hub,Online Store,EUR
+TXN004,2024-01-12,,Utilities,Monthly water bill,City Utilities,EUR
+TXN005,2024-01-14,85.00,Health,Pharmacy purchase,MedPlus,EUR
+TXN006,2024-01-15,1250.00,Rent,January rent payment,Landlord GmbH,EUR
+TXN007,2024-01-18,23.40,Food,Restaurant lunch,Cafe Central,EUR
+TXN008,2024-01-20,49.99,Food,Grocery shopping,Supermarket AG,EUR
+TXN009,2024-01-22,15.00,Entertainment,Streaming subscription,StreamNow,EUR
+TXN010,2024-01-25,49.99,Food,Grocery shopping,Supermarket AG,EUR
+TXN011,2024-01-28,200.00,Shopping,Winter jacket,Fashion House,EUR
+TXN012,2024-01-31,65.30,Health,Dentist appointment,Dental Care,EUR

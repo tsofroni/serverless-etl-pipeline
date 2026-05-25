@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Title -->
+    <mxCell id="title" value="Serverless ETL Pipeline — AWS Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="377" y="20" width="900" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ============ SWIMLANE: Ingestion ============ -->
+    <mxCell id="lane_ingestion" value="Ingestion" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="40" y="80" width="280" height="260" as="geometry" />
+    </mxCell>
+
+    <!-- S3 Drop Zone -->
+    <mxCell id="s3_drop" value="S3 Drop Zone&#xa;(input files)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#7AA116;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_ingestion">
+      <mxGeometry x="90" y="60" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Lambda Trigger -->
+    <mxCell id="lambda_trigger" value="Lambda&#xa;(etl-trigger)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_ingestion">
+      <mxGeometry x="90" y="170" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Arrow: S3 Drop → Lambda Trigger -->
+    <mxCell id="e1" value="S3 ObjectCreated&#xa;Event" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="s3_drop" target="lambda_trigger" parent="lane_ingestion">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ============ SWIMLANE: Orchestration ============ -->
+    <mxCell id="lane_orchestration" value="Orchestration" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="360" y="80" width="220" height="260" as="geometry" />
+    </mxCell>
+
+    <!-- Step Functions -->
+    <mxCell id="sf" value="Step Functions&#xa;Express Workflow&#xa;(ETL Pipeline)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.step_functions;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_orchestration">
+      <mxGeometry x="71" y="90" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Arrow: Lambda Trigger → Step Functions -->
+    <mxCell id="e2" value="start_execution&#xa;(jobId, bucket, key, format)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="lambda_trigger" target="sf" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ============ SWIMLANE: Processing ============ -->
+    <mxCell id="lane_processing" value="Processing (Step Functions Tasks)" style="swimlane;startSize=30;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="630" y="80" width="760" height="440" as="geometry" />
+    </mxCell>
+
+    <!-- Lambda Validate -->
+    <mxCell id="lambda_validate" value="Lambda&#xa;(etl-validate)&#xa;&#xa;• Size check (max 50 MB)&#xa;• Encoding check&#xa;• CSV header / JSON array" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_processing">
+      <mxGeometry x="40" y="60" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Lambda Transform -->
+    <mxCell id="lambda_transform" value="Lambda&#xa;(etl-transform)&#xa;&#xa;• Normalize columns&#xa;• Cast types&#xa;• Remove duplicates" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_processing">
+      <mxGeometry x="230" y="60" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Lambda Enrich -->
+    <mxCell id="lambda_enrich" value="Lambda&#xa;(etl-enrich)&#xa;&#xa;• Add processed_at&#xa;• Add job_id&#xa;• Add record_index&#xa;• Build metadata block" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_processing">
+      <mxGeometry x="420" y="60" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Lambda Load -->
+    <mxCell id="lambda_load" value="Lambda&#xa;(etl-load)&#xa;&#xa;• Write to output S3&#xa;• Delete temp files&#xa;• Update DynamoDB LOADED" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_processing">
+      <mxGeometry x="610" y="60" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Lambda Error Handler -->
+    <mxCell id="lambda_error" value="Lambda&#xa;(etl-error-handler)&#xa;&#xa;• Parse error details&#xa;• Update DynamoDB FAILED&#xa;• Log to CloudWatch" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#AE4132;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_processing">
+      <mxGeometry x="310" y="300" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Arrows: Processing steps -->
+    <mxCell id="e3" value="VALIDATED" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="lambda_validate" target="lambda_transform" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" value="TRANSFORMED" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="lambda_transform" target="lambda_enrich" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" value="ENRICHED" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="lambda_enrich" target="lambda_load" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Error arrows -->
+    <mxCell id="e6" value="Catch: States.ALL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;strokeColor=#AE4132;" edge="1" source="lambda_validate" target="lambda_error" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;strokeColor=#AE4132;" edge="1" source="lambda_transform" target="lambda_error" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;strokeColor=#AE4132;" edge="1" source="lambda_enrich" target="lambda_error" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;strokeColor=#AE4132;" edge="1" source="lambda_load" target="lambda_error" parent="lane_processing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Arrow: Step Functions → Lambda Validate -->
+    <mxCell id="e10" value="invoke" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="sf" target="lambda_validate" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ============ SWIMLANE: Storage ============ -->
+    <mxCell id="lane_storage" value="Storage" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="40" y="580" width="1350" height="220" as="geometry" />
+    </mxCell>
+
+    <!-- DynamoDB -->
+    <mxCell id="dynamodb" value="DynamoDB&#xa;(etl_jobs)&#xa;&#xa;PK: jobId | SK: status&#xa;One item per status transition" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.dynamodb;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#2E73B8;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_storage">
+      <mxGeometry x="120" y="70" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- S3 Output Bucket -->
+    <mxCell id="s3_output" value="S3 Output Bucket&#xa;&#xa;output/{jobId}/result.json" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#7AA116;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_storage">
+      <mxGeometry x="550" y="70" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- S3 Temp Prefix -->
+    <mxCell id="s3_temp" value="S3 Drop Zone&#xa;(temp prefix)&#xa;&#xa;processed/{jobId}/&#xa;transformed.json&#xa;enriched.json" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#7AA116;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_storage">
+      <mxGeometry x="330" y="70" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- CloudWatch -->
+    <mxCell id="cloudwatch" value="CloudWatch Logs&#xa;&#xa;/aws/lambda/etl-*&#xa;Step Functions history" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch;labelBackgroundColor=#ffffff;sketch=0;fontStyle=1;fillColor=#E7157B;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="lane_storage">
+      <mxGeometry x="980" y="70" width="78" height="78" as="geometry" />
+    </mxCell>
+
+    <!-- Arrows to storage -->
+    <mxCell id="e11" value="STARTED / VALIDATED /&#xa;TRANSFORMED / ENRICHED /&#xa;LOADED / FAILED" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="lambda_trigger" target="dynamodb" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e12" value="write temp files" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=0;" edge="1" source="lambda_transform" target="s3_temp" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=0;" edge="1" source="lambda_enrich" target="s3_temp" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e14" value="write result.json" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="lambda_load" target="s3_output" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e15" value="all Lambdas + SF" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="sf" target="cloudwatch" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

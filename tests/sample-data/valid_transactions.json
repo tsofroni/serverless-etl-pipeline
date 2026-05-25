@@ -1,0 +1,110 @@
+[
+  {
+    "Transaction ID": "TXN001",
+    "Date": "2024-01-05",
+    "Amount": 49.99,
+    "Category": "Food",
+    "Description": "Grocery shopping",
+    "Merchant": "Supermarket AG",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN002",
+    "Date": "2024-01-07",
+    "Amount": 12.50,
+    "Category": "Transport",
+    "Description": "Bus ticket",
+    "Merchant": "City Transit",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN003",
+    "Date": "2024-01-10",
+    "Amount": 299.00,
+    "Category": "Electronics",
+    "Description": "USB hub",
+    "Merchant": "Online Store",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN004",
+    "Date": "2024-01-12",
+    "Amount": null,
+    "Category": "Utilities",
+    "Description": "Monthly water bill",
+    "Merchant": "City Utilities",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN005",
+    "Date": "2024-01-14",
+    "Amount": 85.00,
+    "Category": "Health",
+    "Description": "Pharmacy purchase",
+    "Merchant": "MedPlus",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN006",
+    "Date": "2024-01-15",
+    "Amount": 1250.00,
+    "Category": "Rent",
+    "Description": "January rent payment",
+    "Merchant": "Landlord GmbH",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN007",
+    "Date": "2024-01-18",
+    "Amount": 23.40,
+    "Category": "Food",
+    "Description": "Restaurant lunch",
+    "Merchant": "Cafe Central",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN008",
+    "Date": "2024-01-20",
+    "Amount": 49.99,
+    "Category": "Food",
+    "Description": "Grocery shopping",
+    "Merchant": "Supermarket AG",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN009",
+    "Date": "2024-01-22",
+    "Amount": 15.00,
+    "Category": "Entertainment",
+    "Description": "Streaming subscription",
+    "Merchant": "StreamNow",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN010",
+    "Date": "2024-01-25",
+    "Amount": 49.99,
+    "Category": "Food",
+    "Description": "Grocery shopping",
+    "Merchant": "Supermarket AG",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN011",
+    "Date": "2024-01-28",
+    "Amount": 200.00,
+    "Category": "Shopping",
+    "Description": "Winter jacket",
+    "Merchant": "Fashion House",
+    "Currency": "EUR"
+  },
+  {
+    "Transaction ID": "TXN012",
+    "Date": "2024-01-31",
+    "Amount": 65.30,
+    "Category": "Health",
+    "Description": "Dentist appointment",
+    "Merchant": "Dental Care",
+    "Currency": "EUR"
+  }
+]

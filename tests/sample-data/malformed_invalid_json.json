@@ -1,0 +1,13 @@
+[
+  {
+    "Transaction ID": "TXN001",
+    "Date": "2024-01-05",
+    "Amount": 49.99,
+    "Category": "Food"
+  },
+  {
+    "Transaction ID": "TXN002",
+    "Date": "2024-01-07",
+    "Amount": 12.50,
+    "Category": "Transport"
+

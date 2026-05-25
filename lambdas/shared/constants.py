@@ -1,0 +1,14 @@
+INPUT_FORMATS = ["csv", "json"]
+
+SUPPORTED_ENCODINGS = ["utf-8", "utf-8-sig", "latin-1"]
+
+MAX_FILE_SIZE_MB = 50
+
+
+class JOB_STATUSES:
+    STARTED = "STARTED"
+    VALIDATED = "VALIDATED"
+    TRANSFORMED = "TRANSFORMED"
+    ENRICHED = "ENRICHED"
+    LOADED = "LOADED"
+    FAILED = "FAILED"

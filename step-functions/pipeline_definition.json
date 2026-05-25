@@ -1,0 +1,105 @@
+{
+  "Comment": "Serverless ETL Pipeline — Express Workflow",
+  "StartAt": "ValidateFile",
+  "States": {
+    "ValidateFile": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-validate",
+      "ResultPath": "$.taskResult",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ErrorHandler"
+        }
+      ],
+      "Next": "TransformData"
+    },
+    "TransformData": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-transform",
+      "ResultPath": null,
+      "InputPath": "$",
+      "OutputPath": "$",
+      "Parameters": {
+        "jobId.$": "$.jobId",
+        "sourceBucket.$": "$.sourceBucket",
+        "sourceKey.$": "$.sourceKey",
+        "inputFormat.$": "$.inputFormat",
+        "recordCount.$": "$.taskResult.data.recordCount"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ErrorHandler"
+        }
+      ],
+      "Next": "EnrichData"
+    },
+    "EnrichData": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-enrich",
+      "ResultPath": null,
+      "InputPath": "$",
+      "OutputPath": "$",
+      "Parameters": {
+        "jobId.$": "$.jobId",
+        "sourceBucket.$": "$.sourceBucket",
+        "sourceKey.$": "$.sourceKey",
+        "inputFormat.$": "$.inputFormat",
+        "recordCount.$": "$.recordCount",
+        "transformedKey.$": "$.transformedKey"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ErrorHandler"
+        }
+      ],
+      "Next": "LoadOutput"
+    },
+    "LoadOutput": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-load",
+      "ResultPath": null,
+      "InputPath": "$",
+      "OutputPath": "$",
+      "Parameters": {
+        "jobId.$": "$.jobId",
+        "sourceBucket.$": "$.sourceBucket",
+        "sourceKey.$": "$.sourceKey",
+        "enrichedKey.$": "$.enrichedKey",
+        "recordCount.$": "$.recordCount"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ErrorHandler"
+        }
+      ],
+      "Next": "PipelineSuccess"
+    },
+    "PipelineSuccess": {
+      "Type": "Succeed"
+    },
+    "ErrorHandler": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-error-handler",
+      "Parameters": {
+        "jobId.$": "$.jobId",
+        "Error.$": "$.error.Error",
+        "Cause.$": "$.error.Cause"
+      },
+      "ResultPath": "$.errorResult",
+      "Next": "PipelineFailed"
+    },
+    "PipelineFailed": {
+      "Type": "Fail",
+      "Error": "ETLPipelineError",
+      "Cause": "One or more ETL pipeline steps failed. Check DynamoDB etl_jobs and CloudWatch Logs for details."
+    }
+  }
+}
