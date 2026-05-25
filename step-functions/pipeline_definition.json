@@ -5,7 +5,7 @@
     "ValidateFile": {
       "Type": "Task",
       "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-validate",
-      "ResultPath": "$.taskResult",
+      "ResultPath": "$",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -18,16 +18,7 @@
     "TransformData": {
       "Type": "Task",
       "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-transform",
-      "ResultPath": null,
-      "InputPath": "$",
-      "OutputPath": "$",
-      "Parameters": {
-        "jobId.$": "$.jobId",
-        "sourceBucket.$": "$.sourceBucket",
-        "sourceKey.$": "$.sourceKey",
-        "inputFormat.$": "$.inputFormat",
-        "recordCount.$": "$.taskResult.data.recordCount"
-      },
+      "ResultPath": "$",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -40,17 +31,7 @@
     "EnrichData": {
       "Type": "Task",
       "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-enrich",
-      "ResultPath": null,
-      "InputPath": "$",
-      "OutputPath": "$",
-      "Parameters": {
-        "jobId.$": "$.jobId",
-        "sourceBucket.$": "$.sourceBucket",
-        "sourceKey.$": "$.sourceKey",
-        "inputFormat.$": "$.inputFormat",
-        "recordCount.$": "$.recordCount",
-        "transformedKey.$": "$.transformedKey"
-      },
+      "ResultPath": "$",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -63,16 +44,7 @@
     "LoadOutput": {
       "Type": "Task",
       "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:etl-load",
-      "ResultPath": null,
-      "InputPath": "$",
-      "OutputPath": "$",
-      "Parameters": {
-        "jobId.$": "$.jobId",
-        "sourceBucket.$": "$.sourceBucket",
-        "sourceKey.$": "$.sourceKey",
-        "enrichedKey.$": "$.enrichedKey",
-        "recordCount.$": "$.recordCount"
-      },
+      "ResultPath": "$.loadResult",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
