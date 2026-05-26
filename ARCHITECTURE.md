@@ -20,20 +20,33 @@ The pipeline follows a **fan-in, linear execution** pattern: one file arrives, o
 │  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐          │
 │  │ Validate │→ │ Transform │→ │  Enrich  │→ │   Load   │→ Succeed  │
 │  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘          │
-│       │              │              │              │                 │
 │       └──────────────┴──────────────┴──────────────┘                │
 │                              │ (any failure)                        │
 │                     ┌────────▼────────┐                             │
 │                     │  Error Handler  │→ Fail                       │
 │                     └─────────────────┘                             │
 └─────────────────────────────────────────────────────────────────────┘
-                                       │
-┌──────────────────────────────────────▼──────────────────────────────┐
-│  Storage                                                            │
-│  S3 Output Bucket         DynamoDB (etl_jobs)     CloudWatch Logs  │
-│  output/{jobId}/result.json   PK: jobId               /aws/lambda/ │
-│                               SK: status (per event)  /aws/states/ │
-└─────────────────────────────────────────────────────────────────────┘
+            │                                       │
+            │ (on FAILED execution)                 │ (all executions)
+┌───────────▼───────────────────┐    ┌──────────────▼──────────────────┐
+│  Alerting                     │    │  Storage                        │
+│  EventBridge Rule             │    │  S3 Output Bucket               │
+│         ↓                     │    │  output/{jobId}/result.json     │
+│  Lambda: etl-notify           │    │                                 │
+│         ↓                     │    │  DynamoDB (etl_jobs)            │
+│  SNS → Email                  │    │  PK: jobId | SK: status         │
+└───────────────────────────────┘    │                                 │
+                                     │  CloudWatch Logs + Dashboard    │
+┌──────────────────────────────┐     │  /aws/lambda/* | /aws/states/* │
+│  Status API                  │     └─────────────────────────────────┘
+│  API Gateway REST            │
+│  GET /jobs                   │
+│  GET /jobs/{jobId}           │
+│         ↓                    │
+│  Lambda: etl-status          │
+│         ↓                    │
+│  DynamoDB Query              │
+└──────────────────────────────┘
 ```
 
 ---
@@ -107,6 +120,25 @@ Reads the enriched file, writes the final output to `output/{jobId}/result.json`
 **Responsibility**: Centralised failure recording.
 
 Receives the Step Functions error event `{Error, Cause}` (injected by the Catch block), parses the `Cause` JSON string to extract the human-readable `errorMessage`, writes a `FAILED` item to DynamoDB, and logs the full error details to CloudWatch. This means every failure is visible in two places: DynamoDB (for quick status lookup) and CloudWatch (for full stack trace).
+
+### Notify Lambda (`etl-notify`)
+
+**Responsibility**: Human-readable failure alerting.
+
+Triggered by an EventBridge rule whenever a Step Functions execution transitions to `FAILED`. The Lambda extracts the `jobId` from the execution input (stored in `detail.input`), queries DynamoDB for the `FAILED` status item to retrieve the `errorMessage` written by the error-handler Lambda, then constructs a plain-text email body including file name, error, duration, and troubleshooting links, and publishes it to the SNS topic.
+
+Using a Lambda as an intermediary (rather than routing EventBridge directly to SNS) gives full control over the email content — particularly the ability to include the DynamoDB error message, which is not available in the raw EventBridge event payload.
+
+### Status Lambda (`etl-status`)
+
+**Responsibility**: Read-only job history API.
+
+Invoked by API Gateway with Lambda proxy integration. Supports two operations:
+
+- `GET /jobs/{jobId}` — queries DynamoDB with `KeyConditionExpression: jobId = :id`, sorts items by status order, and returns the full timeline plus summary fields (`currentStatus`, `sourceKey`, `outputKey`, `recordCount`, `errorMessage`, timing)
+- `GET /jobs` — DynamoDB Scan with optional `status` filter, deduplicates results to one item per job (keeping the highest-status item), returns sorted by `updatedAt` descending
+
+The `_json_default` function handles `Decimal` types returned by DynamoDB, converting them to `int` or `float` before JSON serialisation — the same problem solved by `_DecimalEncoder` in the finance tracker project.
 
 ### Shared Utilities (`lambdas/shared/`)
 

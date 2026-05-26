@@ -48,7 +48,7 @@ phases:
           echo "shared/ changed — redeploying all functions"
         fi
 
-        for fn in trigger validate transform enrich load error-handler; do
+        for fn in trigger validate transform enrich load error-handler notify status; do
           if echo "$CHANGED" | grep -q "lambdas/$fn/" || [ "$SHARED_CHANGED" = "true" ]; then
             deploy_function $fn
           else

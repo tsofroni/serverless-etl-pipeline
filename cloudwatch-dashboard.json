@@ -1,0 +1,184 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# ETL Pipeline — Operations Dashboard\nReplace `REGION` with your AWS region before importing. All metrics update every 5 minutes."
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 1,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Step Functions — Executions (Succeeded vs Failed)",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "stat": "Sum",
+        "metrics": [
+          ["AWS/States", "ExecutionsSucceeded", "StateMachineArn", "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:etl-pipeline", { "label": "Succeeded", "color": "#2ca02c" }],
+          ["AWS/States", "ExecutionsFailed",    "StateMachineArn", "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:etl-pipeline", { "label": "Failed",    "color": "#d62728" }],
+          ["AWS/States", "ExecutionsStarted",   "StateMachineArn", "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:etl-pipeline", { "label": "Started",   "color": "#1f77b4" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 1,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Step Functions — Execution Duration (P50 / P95)",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "metrics": [
+          ["AWS/States", "ExecutionTime", "StateMachineArn", "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:etl-pipeline", { "stat": "p50", "label": "P50 duration (ms)" }],
+          ["AWS/States", "ExecutionTime", "StateMachineArn", "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:etl-pipeline", { "stat": "p95", "label": "P95 duration (ms)" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 7,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Lambda — Invocations per Function",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "stat": "Sum",
+        "metrics": [
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-trigger",       { "label": "trigger" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-validate",      { "label": "validate" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-transform",     { "label": "transform" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-enrich",        { "label": "enrich" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-load",          { "label": "load" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-error-handler", { "label": "error-handler" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-notify",        { "label": "notify" }],
+          ["AWS/Lambda", "Invocations", "FunctionName", "etl-status",        { "label": "status (API)" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 7,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Lambda — Errors per Function",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "stat": "Sum",
+        "metrics": [
+          ["AWS/Lambda", "Errors", "FunctionName", "etl-trigger",       { "label": "trigger",       "color": "#d62728" }],
+          ["AWS/Lambda", "Errors", "FunctionName", "etl-validate",      { "label": "validate",      "color": "#ff7f0e" }],
+          ["AWS/Lambda", "Errors", "FunctionName", "etl-transform",     { "label": "transform",     "color": "#9467bd" }],
+          ["AWS/Lambda", "Errors", "FunctionName", "etl-enrich",        { "label": "enrich",        "color": "#8c564b" }],
+          ["AWS/Lambda", "Errors", "FunctionName", "etl-load",          { "label": "load",          "color": "#e377c2" }],
+          ["AWS/Lambda", "Errors", "FunctionName", "etl-error-handler", { "label": "error-handler", "color": "#7f7f7f" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 13,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Lambda — Duration P95 per Function (ms)",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "metrics": [
+          ["AWS/Lambda", "Duration", "FunctionName", "etl-trigger",   { "stat": "p95", "label": "trigger p95" }],
+          ["AWS/Lambda", "Duration", "FunctionName", "etl-validate",  { "stat": "p95", "label": "validate p95" }],
+          ["AWS/Lambda", "Duration", "FunctionName", "etl-transform", { "stat": "p95", "label": "transform p95" }],
+          ["AWS/Lambda", "Duration", "FunctionName", "etl-enrich",    { "stat": "p95", "label": "enrich p95" }],
+          ["AWS/Lambda", "Duration", "FunctionName", "etl-load",      { "stat": "p95", "label": "load p95" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 13,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Lambda — Throttles",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "stat": "Sum",
+        "metrics": [
+          ["AWS/Lambda", "Throttles", "FunctionName", "etl-trigger",       { "label": "trigger" }],
+          ["AWS/Lambda", "Throttles", "FunctionName", "etl-validate",      { "label": "validate" }],
+          ["AWS/Lambda", "Throttles", "FunctionName", "etl-transform",     { "label": "transform" }],
+          ["AWS/Lambda", "Throttles", "FunctionName", "etl-enrich",        { "label": "enrich" }],
+          ["AWS/Lambda", "Throttles", "FunctionName", "etl-load",          { "label": "load" }],
+          ["AWS/Lambda", "Throttles", "FunctionName", "etl-error-handler", { "label": "error-handler" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 19,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "DynamoDB — Successful Requests (etl_jobs)",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "stat": "Sum",
+        "metrics": [
+          ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "etl_jobs", "Operation", "PutItem",  { "label": "PutItem (status writes)" }],
+          ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "etl_jobs", "Operation", "Query",    { "label": "Query (status reads)" }],
+          ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "etl_jobs", "Operation", "GetItem",  { "label": "GetItem" }]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 19,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "API Gateway — Status API Requests",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "REGION",
+        "period": 300,
+        "stat": "Sum",
+        "metrics": [
+          ["AWS/ApiGateway", "Count",   "ApiName", "etl-status-api", { "label": "Total requests",    "color": "#1f77b4" }],
+          ["AWS/ApiGateway", "5XXError","ApiName", "etl-status-api", { "label": "5XX errors",        "color": "#d62728" }],
+          ["AWS/ApiGateway", "4XXError","ApiName", "etl-status-api", { "label": "4XX errors (not found)", "color": "#ff7f0e" }]
+        ]
+      }
+    }
+  ]
+}

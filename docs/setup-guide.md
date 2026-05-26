@@ -245,6 +245,9 @@ Go to **Configuration → Environment variables → Edit** and add:
 | `etl-load` | `DYNAMODB_TABLE` | `etl_jobs` |
 | `etl-load` | `OUTPUT_BUCKET` | `your-name-etl-output` |
 | `etl-error-handler` | `DYNAMODB_TABLE` | `etl_jobs` |
+| `etl-notify` | `DYNAMODB_TABLE` | `etl_jobs` |
+| `etl-notify` | `SNS_TOPIC_ARN` | *(fill in after Step 8)* |
+| `etl-status` | `DYNAMODB_TABLE` | `etl_jobs` |
 
 **E. Set Timeout**
 
@@ -299,7 +302,111 @@ Lambda creates log groups automatically on first invocation. After running a tes
 - `/aws/lambda/etl-enrich`
 - `/aws/lambda/etl-load`
 - `/aws/lambda/etl-error-handler`
+- `/aws/lambda/etl-notify`
+- `/aws/lambda/etl-status`
 - `/aws/states/etl-pipeline`
+
+---
+
+## Step 8 — Set Up SNS Failure Notifications
+
+### 8a. Create the SNS topic
+
+1. Go to **SNS → Topics → Create topic**
+2. **Type**: Standard
+3. **Name**: `etl-pipeline-alerts`
+4. Click **Create topic**
+5. Copy the **Topic ARN** — add it as `SNS_TOPIC_ARN` on the `etl-notify` Lambda (Step 4D)
+
+### 8b. Subscribe your email
+
+1. On the topic page → **Subscriptions → Create subscription**
+2. **Protocol**: Email
+3. **Endpoint**: your email address
+4. Click **Create subscription**
+5. Confirm the subscription via the email from AWS
+
+### 8c. Grant notify Lambda permission to publish
+
+Add this statement to `etl-lambda-execution-role`'s inline policy:
+
+```json
+{
+  "Sid": "SNSPublish",
+  "Effect": "Allow",
+  "Action": "sns:Publish",
+  "Resource": "arn:aws:sns:REGION:ACCOUNT_ID:etl-pipeline-alerts"
+}
+```
+
+### 8d. Create the EventBridge rule
+
+1. Go to **EventBridge → Rules → Create rule**
+2. **Name**: `etl-pipeline-on-failure`
+3. **Event bus**: default
+4. **Rule type**: Rule with an event pattern
+5. **Event pattern** (paste this JSON, replacing REGION and ACCOUNT_ID):
+
+```json
+{
+  "source": ["aws.states"],
+  "detail-type": ["Step Functions Execution Status Change"],
+  "detail": {
+    "stateMachineArn": ["arn:aws:states:REGION:ACCOUNT_ID:stateMachine:etl-pipeline"],
+    "status": ["FAILED"]
+  }
+}
+```
+
+6. **Target**: AWS service → Lambda function → `etl-notify`
+7. Click **Create rule**
+
+---
+
+## Step 9 — Deploy the Job Status API
+
+### 9a. Create the API Gateway REST API
+
+1. Go to **API Gateway → Create API → REST API → Build**
+2. **API name**: `etl-status-api`
+3. **Endpoint type**: Regional
+4. Click **Create API**
+
+### 9b. Create resources and methods
+
+**Create `/jobs` resource:**
+1. **Actions → Create Resource** → Resource Name: `jobs`, Path: `jobs`, enable CORS
+2. **Actions → Create Method → GET** → Lambda Proxy integration → `etl-status`
+
+**Create `/jobs/{jobId}` resource:**
+1. Select `/jobs` → **Actions → Create Resource** → Resource Name: `{jobId}`, enable CORS
+2. **Actions → Create Method → GET** → Lambda Proxy integration → `etl-status`
+
+### 9c. Deploy the API
+
+1. **Actions → Deploy API → New Stage** → Stage name: `prod`
+2. Copy the **Invoke URL** — this is your base URL for all API calls
+
+Test it:
+```bash
+curl "https://YOUR_API_ID.execute-api.REGION.amazonaws.com/prod/jobs"
+```
+
+See [docs/api-documentation.md](./api-documentation.md) for full endpoint documentation.
+
+---
+
+## Step 10 — Import the CloudWatch Dashboard
+
+1. Go to **CloudWatch → Dashboards → Create dashboard**
+2. **Dashboard name**: `etl-pipeline`
+3. When prompted to add a widget, click **Cancel**
+4. Click **Actions → View/edit source**
+5. Paste the contents of [`cloudwatch-dashboard.json`](../cloudwatch-dashboard.json)
+6. Replace all `REGION` with your AWS region and all `ACCOUNT_ID` with your account ID
+7. Click **Update**
+
+The dashboard will show metrics for all Lambda functions, Step Functions, DynamoDB, and the API Gateway once executions have run.
 
 ---
 
@@ -307,9 +414,16 @@ Lambda creates log groups automatically on first invocation. After running a tes
 
 Upload the sample files from `tests/sample-data/` to test different scenarios. See [tests/sample-data/README.md](../tests/sample-data/README.md) for expected outcomes.
 
-**Quick test:**
-
+**Happy path test:**
 1. Upload `tests/sample-data/valid_transactions.csv` to `your-name-etl-drop-zone`
-2. Check **Step Functions → etl-pipeline → Executions** — a new execution should appear within seconds
-3. Check **DynamoDB → etl_jobs** — query by `jobId` to see all status milestones
-4. Check **S3 → your-name-etl-output → output/** — `result.json` should be present
+2. **Step Functions → etl-pipeline → Executions** — execution appears and succeeds
+3. **DynamoDB → etl_jobs** — query by `jobId`, see all 5 status milestones
+4. **S3 → your-name-etl-output → output/** — `result.json` present
+5. **Status API** — `GET /jobs/{jobId}` returns full timeline
+
+**Failure path test:**
+1. Upload `tests/sample-data/malformed_no_header.csv` to the drop-zone
+2. **Step Functions** — execution appears and fails at ValidateFile
+3. **DynamoDB** — two items: STARTED and FAILED (with error message)
+4. **Email** — notification arrives within ~30 seconds
+5. **Status API** — `GET /jobs/{jobId}` shows `currentStatus: "FAILED"` and `errorMessage`
