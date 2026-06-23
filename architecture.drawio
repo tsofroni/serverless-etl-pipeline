@@ -1,285 +1,163 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
-  <root>
-    <mxCell id="0" />
-    <mxCell id="1" parent="0" />
+<mxfile host="app.diagrams.net" version="21.0">
+  <diagram name="Serverless ETL Pipeline" id="etl-pipeline-arch">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
 
-    <!-- TITLE -->
-    <mxCell id="title" value="Serverless ETL Pipeline — AWS Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontStyle=1;" vertex="1" parent="1">
-      <mxGeometry x="200" y="16" width="1000" height="34" as="geometry" />
-    </mxCell>
+        <!-- ===== SECTION LABELS ===== -->
+        <mxCell id="lbl1" value="① Main Pipeline" style="text;html=1;align=left;fontStyle=1;fontSize=11;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="80" y="88" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl2" value="② Failure Alerting" style="text;html=1;align=left;fontStyle=1;fontSize=11;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="780" y="88" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl3" value="③ Job Status API" style="text;html=1;align=left;fontStyle=1;fontSize=11;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="80" y="418" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl4" value="④ Monitoring" style="text;html=1;align=center;fontStyle=1;fontSize=11;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="370" y="538" width="120" height="20" as="geometry" />
+        </mxCell>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         STEP FUNCTIONS BACKGROUND BOX
-         ═══════════════════════════════════════════════════════════ -->
-    <mxCell id="sf_bg" value="Step Functions — Express Workflow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#E65100;" vertex="1" parent="1">
-      <mxGeometry x="380" y="62" width="670" height="148" as="geometry" />
-    </mxCell>
+        <!-- ===== MAIN PIPELINE ===== -->
 
-    <!-- ═══════════════════════════════════════════════════════════
-         MAIN PIPELINE ROW
-         ═══════════════════════════════════════════════════════════ -->
+        <!-- S3 Drop Zone -->
+        <mxCell id="s3in" value="S3 Drop Zone" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#7AA116;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
+          <mxGeometry x="80" y="118" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- S3 Drop Zone -->
-    <mxCell id="s3drop" value="&lt;b&gt;S3 Drop Zone&lt;/b&gt;&lt;br/&gt;CSV / JSON input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#1B5E20;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="30" y="95" width="150" height="65" as="geometry" />
-    </mxCell>
+        <!-- Lambda: etl-trigger -->
+        <mxCell id="lam-trigger" value="etl-trigger" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#ED7100;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="1">
+          <mxGeometry x="240" y="118" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- Lambda Trigger -->
-    <mxCell id="l_trigger" value="&lt;b&gt;λ etl-trigger&lt;/b&gt;&lt;br/&gt;validate format&lt;br/&gt;create jobId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="215" y="90" width="145" height="70" as="geometry" />
-    </mxCell>
+        <!-- Step Functions -->
+        <mxCell id="sf" value="Step Functions" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#E7157B;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.step_functions;" vertex="1" parent="1">
+          <mxGeometry x="400" y="118" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- Lambda Validate -->
-    <mxCell id="l_validate" value="&lt;b&gt;λ etl-validate&lt;/b&gt;&lt;br/&gt;size · encoding&lt;br/&gt;CSV/JSON check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="398" y="90" width="140" height="70" as="geometry" />
-    </mxCell>
+        <!-- Step Functions detail annotation -->
+        <mxCell id="sf-note" value="validate → transform → enrich → load" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="340" y="198" width="240" height="18" as="geometry" />
+        </mxCell>
 
-    <!-- Lambda Transform -->
-    <mxCell id="l_transform" value="&lt;b&gt;λ etl-transform&lt;/b&gt;&lt;br/&gt;normalise · cast&lt;br/&gt;deduplicate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="558" y="90" width="140" height="70" as="geometry" />
-    </mxCell>
+        <!-- S3 Output -->
+        <mxCell id="s3out" value="S3 Output" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#7AA116;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
+          <mxGeometry x="560" y="118" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- Lambda Enrich -->
-    <mxCell id="l_enrich" value="&lt;b&gt;λ etl-enrich&lt;/b&gt;&lt;br/&gt;processed_at&lt;br/&gt;record_index" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="718" y="90" width="140" height="70" as="geometry" />
-    </mxCell>
+        <!-- ===== DATA STORAGE ===== -->
 
-    <!-- Lambda Load -->
-    <mxCell id="l_load" value="&lt;b&gt;λ etl-load&lt;/b&gt;&lt;br/&gt;write output&lt;br/&gt;cleanup temp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="878" y="90" width="140" height="70" as="geometry" />
-    </mxCell>
+        <!-- DynamoDB -->
+        <mxCell id="ddb" value="DynamoDB (etl_jobs)" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#C7131F;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.dynamodb;" vertex="1" parent="1">
+          <mxGeometry x="400" y="318" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- S3 Output Bucket -->
-    <mxCell id="s3_out" value="&lt;b&gt;S3 Output Bucket&lt;/b&gt;&lt;br/&gt;output/{jobId}/result.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#1B5E20;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="1075" y="95" width="160" height="65" as="geometry" />
-    </mxCell>
+        <!-- ===== FAILURE ALERTING ===== -->
 
-    <!-- ═══════════════════════════════════════════════════════════
-         MAIN PIPELINE ARROWS
-         ═══════════════════════════════════════════════════════════ -->
+        <!-- EventBridge -->
+        <mxCell id="eb" value="EventBridge" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#E7157B;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eventbridge;" vertex="1" parent="1">
+          <mxGeometry x="780" y="118" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_s3_trig" value="ObjectCreated" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="s3drop" target="l_trigger" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- Lambda: etl-notify -->
+        <mxCell id="lam-notify" value="etl-notify" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#ED7100;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="1">
+          <mxGeometry x="780" y="278" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_trig_val" value="start_execution" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="l_trigger" target="l_validate" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- SNS -->
+        <mxCell id="sns" value="SNS Topic" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#E7157B;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sns;" vertex="1" parent="1">
+          <mxGeometry x="780" y="438" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_val_tra" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="l_validate" target="l_transform" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- Email terminal -->
+        <mxCell id="email" value="📧 Email" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="773" y="558" width="74" height="36" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_tra_enr" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="l_transform" target="l_enrich" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- ===== JOB STATUS API ===== -->
 
-    <mxCell id="e_enr_loa" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="l_enrich" target="l_load" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- API Gateway -->
+        <mxCell id="apigw" value="API Gateway" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#E7157B;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.api_gateway;" vertex="1" parent="1">
+          <mxGeometry x="80" y="438" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_loa_s3" value="write result" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="l_load" target="s3_out" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- Lambda: etl-status -->
+        <mxCell id="lam-status" value="etl-status" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#ED7100;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="1">
+          <mxGeometry x="240" y="438" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         ERROR HANDLING
-         ═══════════════════════════════════════════════════════════ -->
+        <!-- ===== MONITORING ===== -->
 
-    <!-- Lambda Error Handler -->
-    <mxCell id="l_error" value="&lt;b&gt;λ etl-error-handler&lt;/b&gt;&lt;br/&gt;log error&lt;br/&gt;write DynamoDB FAILED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;strokeColor=#4A148C;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="558" y="268" width="160" height="70" as="geometry" />
-    </mxCell>
+        <!-- CloudWatch -->
+        <mxCell id="cw" value="CloudWatch" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;fillColor=#E7157B;labelBackgroundColor=#ffffff;align=center;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch;" vertex="1" parent="1">
+          <mxGeometry x="400" y="558" width="60" height="60" as="geometry" />
+        </mxCell>
 
-    <!-- Fail state -->
-    <mxCell id="fail_state" value="✗ PipelineFailed" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#B71C1C;fontSize=11;fontStyle=1;fontColor=#B71C1C;" vertex="1" parent="1">
-      <mxGeometry x="748" y="282" width="130" height="42" as="geometry" />
-    </mxCell>
+        <!-- ===== EDGES ===== -->
 
-    <!-- Dashed catch arrows from each pipeline Lambda -->
-    <mxCell id="e_catch_v" value="Catch" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#6A1B9A;fontSize=9;exitX=0.5;exitY=1;entryX=0.2;entryY=0;" edge="1" source="l_validate" target="l_error" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- S3 Drop Zone → etl-trigger -->
+        <mxCell id="e1" value="ObjectCreated" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;" edge="1" source="s3in" target="lam-trigger" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_catch_t" value="" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#6A1B9A;exitX=0.5;exitY=1;entryX=0.4;entryY=0;" edge="1" source="l_transform" target="l_error" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- etl-trigger → Step Functions -->
+        <mxCell id="e2" value="StartExecution" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;" edge="1" source="lam-trigger" target="sf" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_catch_e" value="" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#6A1B9A;exitX=0.5;exitY=1;entryX=0.6;entryY=0;" edge="1" source="l_enrich" target="l_error" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- Step Functions → S3 Output -->
+        <mxCell id="e3" value="result.json" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;" edge="1" source="sf" target="s3out" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_catch_l" value="" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#6A1B9A;exitX=0.5;exitY=1;entryX=0.8;entryY=0;" edge="1" source="l_load" target="l_error" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- etl-trigger → DynamoDB (STARTED) -->
+        <mxCell id="e4" value="STARTED" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;dashed=1;strokeColor=#888888;" edge="1" source="lam-trigger" target="ddb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <mxCell id="e_err_fail" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="l_error" target="fail_state" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- Step Functions → DynamoDB (status updates) -->
+        <mxCell id="e5" value="status updates" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;dashed=1;strokeColor=#888888;" edge="1" source="sf" target="ddb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         DYNAMODB (central storage)
-         ═══════════════════════════════════════════════════════════ -->
+        <!-- Step Functions → EventBridge (on FAILED) — routed above pipeline row -->
+        <mxCell id="e6" value="on FAILED" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;dashed=1;strokeColor=#AE4132;fontColor=#AE4132;" edge="1" source="sf" target="eb" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="60" />
+              <mxPoint x="810" y="60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
 
-    <mxCell id="dynamo" value="&lt;b&gt;DynamoDB — etl_jobs&lt;/b&gt;&lt;br/&gt;PK: jobId  |  SK: status&lt;br/&gt;one item per status milestone" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#0D47A1;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="500" y="400" width="210" height="70" as="geometry" />
-    </mxCell>
+        <!-- EventBridge → etl-notify -->
+        <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="eb" target="lam-notify" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <!-- Trigger → DynamoDB (STARTED) -->
-    <mxCell id="e_trig_ddb" value="STARTED" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#1565C0;fontSize=10;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" source="l_trigger" target="dynamo" parent="1">
-      <mxGeometry relative="1" as="geometry">
-        <Array as="points">
-          <mxPoint x="287" y="390" />
-          <mxPoint x="470" y="390" />
-          <mxPoint x="470" y="435" />
-        </Array>
-      </mxGeometry>
-    </mxCell>
+        <!-- etl-notify → SNS -->
+        <mxCell id="e8" value="publish" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;" edge="1" source="lam-notify" target="sns" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <!-- Error Handler → DynamoDB (FAILED) -->
-    <mxCell id="e_err_ddb" value="FAILED" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1565C0;fontSize=10;" edge="1" source="l_error" target="dynamo" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
+        <!-- SNS → Email -->
+        <mxCell id="e9" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="sns" target="email" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <!-- Load → DynamoDB (LOADED) -->
-    <mxCell id="e_loa_ddb" value="LOADED" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#1565C0;fontSize=10;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" source="l_load" target="dynamo" parent="1">
-      <mxGeometry relative="1" as="geometry">
-        <Array as="points">
-          <mxPoint x="948" y="390" />
-          <mxPoint x="740" y="390" />
-          <mxPoint x="740" y="435" />
-        </Array>
-      </mxGeometry>
-    </mxCell>
+        <!-- API Gateway → etl-status -->
+        <mxCell id="e10" value="GET /jobs" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;" edge="1" source="apigw" target="lam-status" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         ALERTING SECTION (right column)
-         ═══════════════════════════════════════════════════════════ -->
+        <!-- etl-status → DynamoDB -->
+        <mxCell id="e11" value="query" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=10;" edge="1" source="lam-status" target="ddb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 
-    <!-- EventBridge Rule -->
-    <mxCell id="eventbridge" value="&lt;b&gt;EventBridge Rule&lt;/b&gt;&lt;br/&gt;on: Step Functions FAILED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="1280" y="268" width="170" height="60" as="geometry" />
-    </mxCell>
-
-    <!-- Lambda Notify -->
-    <mxCell id="l_notify" value="&lt;b&gt;λ etl-notify&lt;/b&gt;&lt;br/&gt;format email&lt;br/&gt;fetch error from DDB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="1280" y="375" width="170" height="70" as="geometry" />
-    </mxCell>
-
-    <!-- SNS Topic -->
-    <mxCell id="sns_topic" value="&lt;b&gt;SNS Topic&lt;/b&gt;&lt;br/&gt;etl-pipeline-alerts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#AD1457;strokeColor=#880E4F;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="1280" y="495" width="170" height="60" as="geometry" />
-    </mxCell>
-
-    <!-- Email -->
-    <mxCell id="email_node" value="📧  Email Alert" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=12;fontStyle=1;fontColor=#E65100;" vertex="1" parent="1">
-      <mxGeometry x="1300" y="600" width="130" height="44" as="geometry" />
-    </mxCell>
-
-    <!-- Fail → EventBridge -->
-    <mxCell id="e_fail_eb" value="FAILED execution" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#E65100;fontSize=10;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" edge="1" source="fail_state" target="eventbridge" parent="1">
-      <mxGeometry relative="1" as="geometry">
-        <Array as="points">
-          <mxPoint x="1220" y="303" />
-          <mxPoint x="1220" y="268" />
-          <mxPoint x="1365" y="268" />
-        </Array>
-      </mxGeometry>
-    </mxCell>
-
-    <mxCell id="e_eb_not" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="eventbridge" target="l_notify" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-
-    <mxCell id="e_not_sns" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="l_notify" target="sns_topic" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-
-    <mxCell id="e_sns_ema" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="sns_topic" target="email_node" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-
-    <!-- Notify → DynamoDB (fetch error) -->
-    <mxCell id="e_not_ddb" value="fetch error" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#1565C0;fontSize=9;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="l_notify" target="dynamo" parent="1">
-      <mxGeometry relative="1" as="geometry">
-        <Array as="points">
-          <mxPoint x="1200" y="410" />
-          <mxPoint x="1200" y="435" />
-          <mxPoint x="710" y="435" />
-        </Array>
-      </mxGeometry>
-    </mxCell>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         STATUS API SECTION (left column, lower)
-         ═══════════════════════════════════════════════════════════ -->
-
-    <!-- API Gateway -->
-    <mxCell id="api_gw" value="&lt;b&gt;API Gateway&lt;/b&gt;&lt;br/&gt;GET /jobs&lt;br/&gt;GET /jobs/{jobId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;strokeColor=#4A148C;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="30" y="395" width="160" height="75" as="geometry" />
-    </mxCell>
-
-    <!-- Lambda Status -->
-    <mxCell id="l_status" value="&lt;b&gt;λ etl-status&lt;/b&gt;&lt;br/&gt;query job history&lt;br/&gt;return timeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#8E0000;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="230" y="395" width="155" height="70" as="geometry" />
-    </mxCell>
-
-    <mxCell id="e_api_sta" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="api_gw" target="l_status" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-
-    <mxCell id="e_sta_ddb" value="Query" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;strokeColor=#1565C0;" edge="1" source="l_status" target="dynamo" parent="1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         CLOUDWATCH DASHBOARD
-         ═══════════════════════════════════════════════════════════ -->
-
-    <mxCell id="cloudwatch" value="&lt;b&gt;CloudWatch Dashboard&lt;/b&gt;  —  Lambda metrics (invocations · errors · duration P95 · throttles)  |  Step Functions success rate &amp; duration  |  DynamoDB  |  API Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00695C;strokeColor=#004D40;fontColor=#ffffff;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="30" y="525" width="1040" height="50" as="geometry" />
-    </mxCell>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         LEGEND
-         ═══════════════════════════════════════════════════════════ -->
-
-    <mxCell id="leg_title" value="Legend" style="text;html=1;fontStyle=1;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="30" y="596" width="60" height="22" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_lam" value="λ Lambda" style="rounded=1;fillColor=#C62828;fontColor=#ffffff;strokeColor=#8E0000;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="30" y="622" width="100" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_s3" value="S3 Bucket" style="rounded=1;fillColor=#2E7D32;fontColor=#ffffff;strokeColor=#1B5E20;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="140" y="622" width="100" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_ddb" value="DynamoDB" style="rounded=1;fillColor=#1565C0;fontColor=#ffffff;strokeColor=#0D47A1;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="250" y="622" width="100" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_sf" value="Step Functions / API GW" style="rounded=1;fillColor=#6A1B9A;fontColor=#ffffff;strokeColor=#4A148C;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="360" y="622" width="160" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_eb" value="EventBridge" style="rounded=1;fillColor=#E65100;fontColor=#ffffff;strokeColor=#BF360C;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="530" y="622" width="100" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_sns" value="SNS" style="rounded=1;fillColor=#AD1457;fontColor=#ffffff;strokeColor=#880E4F;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="640" y="622" width="100" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_cw" value="CloudWatch" style="rounded=1;fillColor=#00695C;fontColor=#ffffff;strokeColor=#004D40;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="750" y="622" width="100" height="26" as="geometry" />
-    </mxCell>
-
-    <mxCell id="leg_err" value="Error path (dashed)" style="rounded=1;fillColor=#ffffff;fontColor=#6A1B9A;strokeColor=#6A1B9A;strokeWidth=2;dashed=1;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="860" y="622" width="150" height="26" as="geometry" />
-    </mxCell>
-
-  </root>
-</mxGraphModel>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
